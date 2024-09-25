@@ -1,8 +1,8 @@
 # Example analysis walkthroughs
 ## A-to-I RNA editing analysis walkthrough
-### Filtering AIMAP results for likely edits
+### Filter AIMAP results for likely edits (-c/--coverage >20 reads and -e/--edit_level >20% alternative allele)
 ```
-./filter_aimap.py -c 20 -e 0.2 --sort --inputdir ~/aimap --outputdir ~/aimap -n filtered_aimap_full_result.txt
+filter_aimap.py -c 20 -e 0.2 --sort --inputdir ~/aimap --outputdir ~/aimap -n filtered_aimap_full_result.txt
 ```
 
 #### Set strand for every detection; A_G == "+" and T_C == "-"
@@ -118,7 +118,7 @@ findMotifsGenome.pl ~/aimap/aimap_nr_edit_data_CDS.bed GCF_001886595.1_ASM188659
 
 #### Extract 89 nts for exactly the 73-nts of the positive control tRNA-Arg[ACG] (N.B. edit site at position 4090444; -33,0,+39)
 ```
-samtools faidx GCF_001886595.1_ASM188659v1_genomic.fna NZ_CP018074.1:4090403-4090491 > trna_arg.fa
+samtools faidx GCF_001886595.1_ASM188659v1_genomic.fna NZ_CP018074.1:4090403-4090491 > ~/aimap/trna_arg.fa
 ```
 
 #### Convert dumped fasta target and background sequences from DNA to RNA
@@ -134,7 +134,7 @@ awk '/^[^>]/{gsub("T","U")}1' ~/aimap/homer117_CDS_rna_fasta/background.fa > ~/a
 ```
 For the positive tRNA-Arg transcript
 ```
-awk '/^[^>]/{gsub("T","U")}1' ~/aimap/RNAfold/trna_arg.fa > ~/aimap/RNAfold/positive_trna_arg.fa
+awk '/^[^>]/{gsub("T","U")}1' ~/aimap/trna_arg.fa > ~/aimap/RNAfold/positive_trna_arg.fa
 ```
 
 #### Calculate the minimum free energy of every 17-nt sliding window (length of anticodon arm of tRNA) in a 117-nt sequence centred on an edit site
@@ -146,7 +146,7 @@ sliding_window_mfe_calculator.sh background_117_cds_rna.fa ~/aimap/RNAfold/100nt
 ```
 Run the program for the positive control, but then also update the Index/Position column for offset edit position
 ```
-sliding_window_mfe_calculator.sh positive_trna_arg.fa ~/aimap/RNAfold/100nt_transcripts/positive_trna_arg_mfe_results_temp.txt 17
+sliding_window_mfe_calculator.sh ~/aimap/RNAfold/positive_trna_arg.fa ~/aimap/RNAfold/100nt_transcripts/positive_trna_arg_mfe_results_temp.txt 17
 ```
 ```
 awk 'BEGIN {OFS="\t"} NR==1 {print; next} {$4 = -33 + (NR-2); print}' ~/aimap/RNAfold/100nt_transcripts/positive_trna_arg_mfe_results_temp.txt > ~/aimap/RNAfold/100nt_transcripts/positive_trna_arg_mfe_results.txt; rm -f ~/aimap/RNAfold/100nt_transcripts/positive_trna_arg_mfe_results_temp.txt
@@ -172,5 +172,3 @@ awk 'BEGIN {FS=OFS="\t"}
 }' ~/aimap/RNAfold/100nt_transcripts/$file\_mfe_results.txt | { read header; echo "$header"; sort -k1,1n; } > ~/aimap/RNAfold/100nt_transcripts/$file\_mfe_results_mean_sd.txt
 done
 ```
-
-
